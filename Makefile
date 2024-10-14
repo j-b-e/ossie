@@ -1,8 +1,9 @@
-generate:
-	@go generate ./...
 
 build:
-	@go build main.go
+	@go build .
+
+generate:
+	@go generate ./...
 
 clean:
 	rm -f main ossie
@@ -10,3 +11,6 @@ clean:
 go-mod-update:
 	@go get -u ./...
 	@go mod tidy
+
+run:
+	@go run .
