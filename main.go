@@ -17,12 +17,12 @@ func debugNYI(c *cli.Context) {
 }
 
 func rcAction(c *cli.Context) error {
-	debugNYI(c)
-	if arg := c.Args().First(); arg == "" {
-		fmt.Println("show rc selection")
-	} else {
-		fmt.Printf("show rc %s\n", arg)
+	arg := c.Args().First()
+	if arg == "" {
+		fmt.Println("Select Cloud env")
+		arg = rcselector(c.Context.Value(Clouds{}).([]Clouds))
 	}
+	SpawnEnv(arg)
 	return nil
 }
 func regionAction(c *cli.Context) error {
@@ -57,6 +57,13 @@ func main() {
 			configfile := cctx.String("config")
 			conf, _ := SetupConfig(configfile)
 			cctx.Context = context.WithValue(cctx.Context, Config{}, conf)
+
+			clouds := loadCloudsYaml()
+			if len(clouds) == 0 {
+				fmt.Println("No clouds found.")
+				return fmt.Errorf("No clouds found")
+			}
+			cctx.Context = context.WithValue(cctx.Context, Clouds{}, clouds)
 			return nil
 		},
 		Name:    "ossie",

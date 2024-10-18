@@ -19,7 +19,7 @@ func SetupConfig(configfile string) (Config, error) {
 	}
 	c := Config{
 		// Set default values
-		RCPath: "~/rcs",
+		RCPath: "~/.config/openstack/",
 	}
 	f, _ := os.Open(configfile)
 	bytes, _ := io.ReadAll(f)
