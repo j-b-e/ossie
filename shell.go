@@ -15,21 +15,40 @@ import (
 
 type Shell string
 
-var (
+const (
 	Bash Shell = "bash"
 )
 
-func SpawnEnv(cloud string) {
+func (c Config) SpawnEnv(cloud Cloud) {
 	s := detectShell()
 	switch s {
 	case Bash:
-		SpawnBash(cloud)
+		c.SpawnBash(cloud)
 	default:
 		fmt.Printf("Shell \"%s\" not supported.\n", s)
 	}
 }
 
-func SpawnBash(cloud string) {
+func envToExport(cloud Cloud) string {
+	var export string
+	for k, v := range cloud.Env {
+		export += "export " + k + "=" + v + "\n"
+	}
+	return export
+}
+
+func (c Config) generatePrompt(cloud Cloud) string {
+	prompt := strings.ReplaceAll(c.Prompt, "%n", cloud.Name)
+	prompt = strings.ReplaceAll(prompt, "%r", "$OS_REGION_NAME")
+	prompt = strings.ReplaceAll(prompt, "%d", "$OS_DOMAIN_NAME")
+	prompt = strings.ReplaceAll(prompt, "%p", "$OS_PROJECT_NAME")
+	prompt = strings.ReplaceAll(prompt, "%u", "$OS_USERNAME")
+	return prompt
+}
+
+func (c Config) SpawnBash(cloud Cloud) {
+	export := envToExport(cloud)
+
 	ossierc, fd := tmpfile([]byte(strings.Join([]string{
 		`
 if [[ -f "/etc/bash.bashrc" ]] ; then
@@ -39,26 +58,33 @@ fi
 if [[ -f "$HOME/.bashrc" ]] ; then
 	source "$HOME/.bashrc"
 fi
+` + export + `
 function _ossie_exec_() {
-    export OS_CLOUD="` + cloud + `"
-	export __OSSIE_SPAWNED=righty
+	` + func(p bool) string {
+			if p {
+				return "unset ${!OS_*}\n" + export
+			}
+			return ""
+		}(c.ProtectEnv) + `
+	export ` + nestedEnvKey + `=` + nestedEnvVal + `
+}
+
+function osenv() {
+	echo -n '` + strings.ReplaceAll(export, "OS_PASSWORD="+cloud.Env["OS_PASSWORD"], "OS_PASSWORD=****") + `'
 }
 
 trap '_ossie_exec_' DEBUG
 OLDPS="$PS1"
-PS1="[` + cloud + `]$OLDPS"
+PS1="[` + c.generatePrompt(cloud) + `]$OLDPS"
 `,
-		// fmt.Sprintf("PS1=\"[%s]\\h$ \"", cloud),
-		// fmt.Sprintf("export OS_CLOUD2=%s", cloud),
-		// "",
 	}, "\n"))).Path()
 	defer unix.Close(fd)
 	newEnv := []string{
 		fmt.Sprintf("OS_CLOUD=%s", cloud),
-		fmt.Sprintf("__OSSIE_SPAWNED=righto"),
+		fmt.Sprintf("%s=%s", nestedEnvKey, nestedEnvVal),
 	}
-	ps1 := os.Getenv("PS1")
-	os.Setenv("PS1", fmt.Sprintf("[%s]%s", cloud, ps1))
+	// ps1 := os.Getenv("PS1")
+	// os.Setenv("PS1", fmt.Sprintf("[%s]%s", cloud, ps1))
 	newEnv = append(newEnv, os.Environ()...)
 	newCmd := []string{
 		"bash",
@@ -67,9 +93,7 @@ PS1="[` + cloud + `]$OLDPS"
 		ossierc,
 		"-i",
 	}
-	// if err := syscall.Exec(newCmd[0], newCmd, newEnv); err != nil {
-	// 	fmt.Println(err)
-	// }
+
 	cmd := exec.Command(newCmd[0], newCmd[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
@@ -86,6 +110,7 @@ PS1="[` + cloud + `]$OLDPS"
 	}
 }
 
+// Creates an in-memory tmpfile only accessible via file-descriptor
 type tmpfile []byte
 
 func (t tmpfile) Path() (path string, fd int) {
@@ -93,34 +118,28 @@ func (t tmpfile) Path() (path string, fd int) {
 	hashStr := hex.EncodeToString(hash[:])
 	fd, err := unix.MemfdCreate(hashStr, 0)
 	if err != nil {
-		return //0, fmt.Errorf("MemfdCreate: %v", err)
+		return
 	}
 
 	err = unix.Ftruncate(fd, int64(len(t)))
 	if err != nil {
-		return //0, fmt.Errorf("Ftruncate: %v", err)
+		return
 	}
 
 	data, err := unix.Mmap(fd, 0, len(t), unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
 	if err != nil {
-		return //0, fmt.Errorf("Mmap: %v", err)
+		return
 	}
 
 	copy(data, t)
 
 	err = unix.Munmap(data)
 	if err != nil {
-		return //0, fmt.Errorf("Munmap: %v", err)
+		return
 	}
 
 	fp := fmt.Sprintf("/proc/self/fd/%d", fd)
 	return fp, fd
-}
-
-type envars []string
-
-func (e envars) Add(env string) {
-	e = append(e, env)
 }
 
 // returns parent pid and parent cmd of a pid
@@ -138,6 +157,7 @@ func parentPid(pid int) (int, string) {
 	return ppid, stat[1]
 }
 
+// walkPidTree finds first ancestor which is a known shell
 func walkPidTree(pid int) Shell {
 	ppid, cmd := parentPid(pid)
 
@@ -152,7 +172,6 @@ func walkPidTree(pid int) Shell {
 	return Shell("unknown")
 }
 
-// walk pid tree to find first ancestor which is a known shell
 func detectShell() Shell {
 	return walkPidTree(os.Getpid())
 }

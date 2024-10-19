@@ -1,6 +1,6 @@
 
-build:
-	@go build .
+build: goreleaser
+	@goreleaser build --snapshot --clean
 
 generate:
 	@go generate ./...
@@ -14,3 +14,9 @@ go-mod-update:
 
 run:
 	@go run .
+
+goreleaser:
+	@command -v gorelease || go install github.com/goreleaser/goreleaser/v2@latest
+
+release: gorelease
+	@gorelease release

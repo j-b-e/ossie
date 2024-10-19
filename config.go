@@ -1,8 +1,9 @@
 package main
 
 import (
-	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 )
@@ -10,7 +11,21 @@ import (
 var configDefaultPath = "ossie.toml"
 
 type Config struct {
-	RCPath string
+	RCPath     string
+	Prompt     string
+	ProtectEnv bool
+}
+
+// Replace ~ with the home directory path
+func expandHomedir(path string) string {
+	if strings.HasPrefix(path, "~") {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return path
+		}
+		path = filepath.Join(homeDir, path[1:])
+	}
+	return path
 }
 
 func SetupConfig(configfile string) (Config, error) {
@@ -19,10 +34,12 @@ func SetupConfig(configfile string) (Config, error) {
 	}
 	c := Config{
 		// Set default values
-		RCPath: "~/.config/openstack/",
+		RCPath:     "~/.config/openstack/",
+		Prompt:     "%n:%r",
+		ProtectEnv: true,
 	}
-	f, _ := os.Open(configfile)
-	bytes, _ := io.ReadAll(f)
-	_ = toml.Unmarshal(bytes, &c)
+	toml.DecodeFile(configfile, &c)
+	c.RCPath = expandHomedir(c.RCPath)
+
 	return c, nil
 }

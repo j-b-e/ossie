@@ -1,27 +1,48 @@
 package main
 
-type CloudModel struct {
-	Name    string
-	AuthURL string `json:"-" env:"OS_AUTH_URL`
+// type Cloud struct {
+// 	Name    string
+// 	AuthURL string `json:"-" env:"OS_AUTH_URL`
 
-	Username string `json:"username,omitempty"`
-	UserID   string `json:"-"`
+// 	Username string `json:"username,omitempty"`
+// 	UserID   string `json:"-"`
 
-	Password string `json:"password,omitempty"`
-	Passcode string `json:"passcode,omitempty"`
+// 	Password string `json:"password,omitempty"`
+// 	Passcode string `json:"passcode,omitempty"`
 
-	DomainID   string `json:"-"`
-	DomainName string `json:"name,omitempty"`
+// 	DomainID   string `json:"-"`
+// 	DomainName string `json:"name,omitempty"`
 
-	TokenID string `json:"-"`
+// 	RegionName string
+// 	RegionID   string
 
-	ProjectID   string
-	ProjectName string
+// 	TokenID string `json:"-"`
 
-	System  bool
-	TrustID string
+// 	ProjectID   string
+// 	ProjectName string
+// 	TenantName  string
+// 	TenantID    string
+
+// 	System  bool
+// 	TrustID string
+
+// 	CaCert string
+
+// 	Interface string
+
+//		IdentityApiVersion string
+//	}
+
+type Cloud struct {
+	Name string
+	Env  map[string]string
 }
 
-type Clouds struct {
-	name string
+func GetCloud(name string, clouds []Cloud) Cloud {
+	for _, v := range clouds {
+		if v.Name == name {
+			return v
+		}
+	}
+	return Cloud{}
 }

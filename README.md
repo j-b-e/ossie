@@ -1,20 +1,32 @@
 # ossie
-A powerful Tool to manage Openstack Contexts
 
-*Inspired by [kubie](https://github.com/sbstp/kubie)*
+A powerful Tool to manage Openstack Environments
 
-# Usage
+## Usage
 
-- `[required]` parameter
-- `<optional>` parameter
+* `ossie rc` Displays a selectable menu of Openstack environments
+* `ossie rc <rc>` Spawns a new shell with the selected  Openstack environment
+* `ossie rc -` Switch back to the previous environment
+* `ossie export` Exports active or selected menu-driven environment in specifed format (rc or clouds.yaml)
+* `ossie export <rc>` Export pre-selected environment
+* `ossie info <rc>` Shows current or selected environment in an overview
 
-* `ossie rc` display a selectable menu of rc-files
-* `ossie rc [rc]` selects the rc and spawns a new shell in this context
-* `ossie rc -` switch back to the previous context
-* `ossie rc [rc] -r <region>` spawns the shell with this region if available
-* `ossie regions` display a selectable menu of regions
-* `ossie edit [rc]` opens rc-file with default editor 
-* `ossie api-version [service] <version>` sets api-version of the service or shows selectable menu
-* `ossie export` prints the current configured rc-file to stdout
-* `ossie info <rc>` shows current or selected rc in nice overview
-* `ossie create <rc>` menu driven creation of rc from scratch or based on rc
+
+## Features
+
+* Spawn Shell with selected Openstack environment from autodetected clouds.yaml or RC Files
+* Configurable Prompt
+* Protects OS_ env against accidental reset
+* Includes Quality-of-Life utilities
+    * `osenv` - Prints `OS_*` Environment
+* Shell Support
+    * Bash
+
+
+## Installation
+
+Download the latest **ossie** Binary from [Github Releases](https://github.com/j-b-e/ossie/releases) and place the file in your PATH.
+
+
+---
+_**Ossie** is inspired by [Kubie](https://github.com/sbstp/kubie)_
