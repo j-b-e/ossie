@@ -80,11 +80,9 @@ PS1="[` + c.generatePrompt(cloud) + `]$OLDPS"
 	}, "\n"))).Path()
 	defer unix.Close(fd)
 	newEnv := []string{
-		fmt.Sprintf("OS_CLOUD=%s", cloud),
 		fmt.Sprintf("%s=%s", nestedEnvKey, nestedEnvVal),
 	}
-	// ps1 := os.Getenv("PS1")
-	// os.Setenv("PS1", fmt.Sprintf("[%s]%s", cloud, ps1))
+
 	newEnv = append(newEnv, os.Environ()...)
 	newCmd := []string{
 		"bash",

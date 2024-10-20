@@ -16,16 +16,20 @@ A powerful Tool to manage Openstack Environments
 
 * Spawn Shell with selected Openstack environment from autodetected clouds.yaml or RC Files
 * Configurable Prompt
-* Protects OS_ env against accidental reset
+* Protects OS_ env against accidental changes
 * Includes Quality-of-Life utilities
     * `osenv` - Prints `OS_*` Environment
 * Shell Support
     * Bash
 
+## Configuration
+
+Have a look in `ossie.toml.example` for available Settings. Run ossie with `-c <FILE>` flag to load the configuration.
 
 ## Installation
 
 Download the latest **ossie** Binary from [Github Releases](https://github.com/j-b-e/ossie/releases) and place the file in your PATH.
+
 
 
 ---

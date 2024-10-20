@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var version = "dev"
@@ -18,20 +18,20 @@ const (
 
 type contextKey string
 
-func debugNYI(c *cli.Context) {
-	fmt.Printf("Args: %#v\n", c.Args())
-	fmt.Printf("Flagnames: %#v\n", c.FlagNames())
-	fmt.Printf("LocalFlags: %#v\n", c.LocalFlagNames())
-	fmt.Printf("Flags: %v\n", c.App.Flags)
-	fmt.Printf("Config: %#v\n", c.Context.Value(Config{}))
-	fmt.Printf("Config RCPath: %s\n", c.Context.Value(Config{}).(Config).RCPath)
+func debugNYI(ctx context.Context, cmd *cli.Command) {
+	fmt.Printf("Args: %#v\n", cmd.Args())
+	fmt.Printf("Flagnames: %#v\n", cmd.FlagNames())
+	fmt.Printf("LocalFlags: %#v\n", cmd.LocalFlagNames())
+	fmt.Printf("Flags: %v\n", cmd.Flags)
+	fmt.Printf("Config: %#v\n", ctx.Value(Config{}))
+	fmt.Printf("Config RCPath: %s\n", ctx.Value(Config{}).(Config).RCPath)
 	fmt.Println("NYI")
 }
 
-func rcAction(c *cli.Context) error {
-	arg := c.Args().First()
+func rcAction(ctx context.Context, cmd *cli.Command) error {
+	arg := cmd.Args().First()
 	var cloud Cloud
-	clouds := c.Context.Value(contextKey("cloud")).([]Cloud)
+	clouds := ctx.Value(contextKey("cloud")).([]Cloud)
 	if arg == "" {
 		cloud = rcselector(clouds)
 	} else {
@@ -40,16 +40,16 @@ func rcAction(c *cli.Context) error {
 			return fmt.Errorf("Cloud %s not found.", arg)
 		}
 	}
-	config := c.Context.Value(Config{}).(Config)
+	config := ctx.Value(Config{}).(Config)
 	config.SpawnEnv(cloud)
 	return nil
 }
-func exportAction(c *cli.Context) error {
-	debugNYI(c)
+func exportAction(ctx context.Context, cmd *cli.Command) error {
+	debugNYI(ctx, cmd)
 	return nil
 }
-func infoAction(c *cli.Context) error {
-	debugNYI(c)
+func infoAction(ctx context.Context, cmd *cli.Command) error {
+	debugNYI(ctx, cmd)
 	return nil
 }
 
@@ -63,19 +63,9 @@ func checkForNested() {
 
 func main() {
 
-	checkForNested()
+	cmd := &cli.Command{
+		Before: func(ctx context.Context, cmd *cli.Command) error {
 
-	app := &cli.App{
-		Before: func(cctx *cli.Context) error {
-			configfile := cctx.String("config")
-			conf, _ := SetupConfig(configfile)
-			cctx.Context = context.WithValue(cctx.Context, Config{}, conf)
-
-			clouds := loadClouds(conf)
-			if len(clouds) == 0 {
-				return fmt.Errorf("No clouds found")
-			}
-			cctx.Context = context.WithValue(cctx.Context, contextKey("cloud"), clouds)
 			return nil
 		},
 		Name:    "ossie",
@@ -89,7 +79,6 @@ func main() {
 				Name:      "rc",
 				Usage:     "Spawn Shell with selected environment",
 				Action:    rcAction,
-				Args:      true,
 				ArgsUsage: "[rc]",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -102,7 +91,6 @@ func main() {
 				Name:   "export",
 				Usage:  "Export active environmen to stdout",
 				Action: exportAction,
-				Args:   false,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:        "mode",
@@ -116,12 +104,25 @@ func main() {
 				Name:   "info",
 				Usage:  "Shows active or selected environment",
 				Action: infoAction,
-				Args:   false,
 			},
 		},
 	}
 
-	if err := app.Run(os.Args); err != nil {
+	checkForNested()
+
+	ctx := context.Background()
+	configfile := cmd.String("config")
+	conf, _ := SetupConfig(configfile)
+	ctx = context.WithValue(ctx, Config{}, conf)
+
+	clouds := loadClouds(conf)
+	if len(clouds) == 0 {
+		fmt.Println("No clouds found")
+		return
+	}
+	ctx = context.WithValue(ctx, contextKey("cloud"), clouds)
+
+	if err := cmd.Run(ctx, os.Args); err != nil {
 		log.Fatal(err)
 	}
 }
