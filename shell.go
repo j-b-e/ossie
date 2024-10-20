@@ -20,12 +20,11 @@ const (
 )
 
 func (c Config) SpawnEnv(cloud Cloud) {
-	s := detectShell()
-	switch s {
+	switch detectShell() {
 	case Bash:
 		c.SpawnBash(cloud)
 	default:
-		fmt.Printf("Shell \"%s\" not supported.\n", s)
+		fmt.Println("Shell not supported.")
 	}
 }
 

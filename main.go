@@ -64,13 +64,10 @@ func checkForNested() {
 func main() {
 
 	cmd := &cli.Command{
-		Before: func(ctx context.Context, cmd *cli.Command) error {
 
-			return nil
-		},
-		Name:    "ossie",
-		Usage:   "A powerful Tool to manage Openstack environments",
-		Version: version,
+		Name:        "ossie",
+		Usage:       "A powerful Tool to manage Openstack environments",
+		Version:     version,
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "config", Aliases: []string{"c"}, Usage: "Path to config `FILE`"},
 		},
@@ -89,7 +86,7 @@ func main() {
 			},
 			{
 				Name:   "export",
-				Usage:  "Export active environmen to stdout",
+				Usage:  "Export active environment to stdout",
 				Action: exportAction,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
