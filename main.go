@@ -31,17 +31,16 @@ func debugNYI(ctx context.Context, cmd *cli.Command) {
 func rcAction(ctx context.Context, cmd *cli.Command) error {
 	arg := cmd.Args().First()
 	var cloud Cloud
-	clouds := ctx.Value(contextKey("cloud")).([]Cloud)
 	if arg == "" {
-		cloud = rcselector(clouds)
+		cloud = rcselector(gConf.clouds)
 	} else {
-		cloud = GetCloud(arg, clouds)
+		cloud = GetCloud(arg, gConf.clouds)
 		if cloud.Name == "" {
 			return fmt.Errorf("Cloud %s not found.", arg)
 		}
 	}
-	config := ctx.Value(Config{}).(Config)
-	config.SpawnEnv(cloud)
+
+	SpawnEnv(cloud)
 	return nil
 }
 func exportAction(ctx context.Context, cmd *cli.Command) error {
@@ -62,14 +61,17 @@ func checkForNested() {
 }
 
 func main() {
-
 	cmd := &cli.Command{
-
-		Name:        "ossie",
-		Usage:       "A powerful Tool to manage Openstack environments",
-		Version:     version,
+		Name:    "ossie",
+		Usage:   "A powerful Tool to manage Openstack environments",
+		Version: version,
+		Before:  SetupConfig,
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "config", Aliases: []string{"c"}, Usage: "Path to config `FILE`"},
+			&cli.StringFlag{
+				Name:    "config",
+				Aliases: []string{"c"},
+				Usage:   "Path to config `FILE`",
+			},
 		},
 		Commands: []*cli.Command{
 			{
@@ -77,12 +79,7 @@ func main() {
 				Usage:     "Spawn Shell with selected environment",
 				Action:    rcAction,
 				ArgsUsage: "[rc]",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "region",
-						Usage: "Sets region if available",
-					},
-				},
+
 			},
 			{
 				Name:   "export",
@@ -107,19 +104,7 @@ func main() {
 
 	checkForNested()
 
-	ctx := context.Background()
-	configfile := cmd.String("config")
-	conf, _ := SetupConfig(configfile)
-	ctx = context.WithValue(ctx, Config{}, conf)
-
-	clouds := loadClouds(conf)
-	if len(clouds) == 0 {
-		fmt.Println("No clouds found")
-		return
-	}
-	ctx = context.WithValue(ctx, contextKey("cloud"), clouds)
-
-	if err := cmd.Run(ctx, os.Args); err != nil {
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}
 }

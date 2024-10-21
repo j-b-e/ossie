@@ -29,3 +29,4 @@ ossie.toml
 ossie
 rc/
 dist/
+__debug_bin*

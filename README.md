@@ -6,10 +6,7 @@ A powerful Tool to manage Openstack Environments
 
 * `ossie rc` Displays a selectable menu of Openstack environments
 * `ossie rc <rc>` Spawns a new shell with the selected  Openstack environment
-* `ossie rc -` Switch back to the previous environment
-* `ossie export` Exports active or selected menu-driven environment in specifed format (rc or clouds.yaml)
-* `ossie export <rc>` Export pre-selected environment
-* `ossie info <rc>` Shows current or selected environment in an overview
+* `ossie info <rc>` Shows information about the Openstack environment
 
 
 ## Features
@@ -24,7 +21,7 @@ A powerful Tool to manage Openstack Environments
 
 ## Configuration
 
-Have a look in `ossie.toml.example` for available Settings. Run ossie with `-c <FILE>` flag to load the configuration.
+Have a look in `ossie.toml.example` for available Settings. Run ossie with `-c <FILE>` flag to specify the configuration file or copy it to `.config/openstack/ossie.toml` for auto-loading.
 
 ## Installation
 

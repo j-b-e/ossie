@@ -11,9 +11,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func loadClouds(c Config) []Cloud {
+func loadClouds(rcPath string) []Cloud {
 	cloudyml := loadCloudsYaml()
-	cloudrc := loadRCClouds(c.RCPath)
+	cloudrc := loadRCClouds(rcPath)
 	return append(cloudyml, cloudrc...)
 }
 

@@ -1,20 +1,26 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/urfave/cli/v3"
 )
 
-var configDefaultPath = "ossie.toml"
+var configDefaultPath = "~/.config/openstack/ossie.toml"
 
 type Config struct {
 	RCPath     string
 	Prompt     string
 	ProtectEnv bool
+	clouds     []Cloud
 }
+
+var gConf Config
 
 // Replace ~ with the home directory path
 func expandHomedir(path string) string {
@@ -28,18 +34,23 @@ func expandHomedir(path string) string {
 	return path
 }
 
-func SetupConfig(configfile string) (Config, error) {
+func SetupConfig(_ context.Context, c *cli.Command) error {
+	configfile := expandHomedir(c.String("config"))
 	if configfile == "" {
-		configfile = configDefaultPath
+		configfile = expandHomedir(configDefaultPath)
 	}
-	c := Config{
+	gConf = Config{
 		// Set default values
 		RCPath:     "~/.config/openstack/",
 		Prompt:     "%n:%r",
 		ProtectEnv: true,
 	}
-	toml.DecodeFile(configfile, &c)
-	c.RCPath = expandHomedir(c.RCPath)
+	toml.DecodeFile(configfile, &gConf)
+	gConf.RCPath = expandHomedir(gConf.RCPath)
 
-	return c, nil
+	gConf.clouds = loadClouds(gConf.RCPath)
+	if len(gConf.clouds) == 0 {
+		return fmt.Errorf("No clouds found")
+	}
+	return nil
 }

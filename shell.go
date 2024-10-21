@@ -19,10 +19,10 @@ const (
 	Bash Shell = "bash"
 )
 
-func (c Config) SpawnEnv(cloud Cloud) {
+func SpawnEnv(cloud Cloud) {
 	switch detectShell() {
 	case Bash:
-		c.SpawnBash(cloud)
+		SpawnBash(cloud)
 	default:
 		fmt.Println("Shell not supported.")
 	}
@@ -36,8 +36,8 @@ func envToExport(cloud Cloud) string {
 	return export
 }
 
-func (c Config) generatePrompt(cloud Cloud) string {
-	prompt := strings.ReplaceAll(c.Prompt, "%n", cloud.Name)
+func generatePrompt(cloud Cloud) string {
+	prompt := strings.ReplaceAll(gConf.Prompt, "%n", cloud.Name)
 	prompt = strings.ReplaceAll(prompt, "%r", "$OS_REGION_NAME")
 	prompt = strings.ReplaceAll(prompt, "%d", "$OS_DOMAIN_NAME")
 	prompt = strings.ReplaceAll(prompt, "%p", "$OS_PROJECT_NAME")
@@ -45,7 +45,7 @@ func (c Config) generatePrompt(cloud Cloud) string {
 	return prompt
 }
 
-func (c Config) SpawnBash(cloud Cloud) {
+func SpawnBash(cloud Cloud) {
 	export := envToExport(cloud)
 
 	ossierc, fd := tmpfile([]byte(strings.Join([]string{
@@ -64,7 +64,7 @@ function _ossie_exec_() {
 				return "unset ${!OS_*}\n" + export
 			}
 			return ""
-		}(c.ProtectEnv) + `
+		}(gConf.ProtectEnv) + `
 	export ` + nestedEnvKey + `=` + nestedEnvVal + `
 }
 
@@ -74,7 +74,7 @@ function osenv() {
 
 trap '_ossie_exec_' DEBUG
 OLDPS="$PS1"
-PS1="[` + c.generatePrompt(cloud) + `]$OLDPS"
+PS1="[` + generatePrompt(cloud) + `]$OLDPS"
 `,
 	}, "\n"))).Path()
 	defer unix.Close(fd)
