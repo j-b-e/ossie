@@ -14,9 +14,10 @@ import (
 var configDefaultPath = "~/.config/openstack/ossie.toml"
 
 type Config struct {
-	RCPath     string
-	Prompt     string
-	ProtectEnv bool
+	RCPath     string // Path to openstack rc files
+	Prompt     string // Prompt definiton
+	ProtectEnv bool   // Protect OS_ env against accidental modfication
+	Aliases    bool   // setup shell aliases o and os
 	clouds     []Cloud
 }
 
@@ -44,6 +45,7 @@ func SetupConfig(_ context.Context, c *cli.Command) error {
 		RCPath:     "~/.config/openstack/",
 		Prompt:     "%n:%r",
 		ProtectEnv: true,
+		Aliases:    false,
 	}
 	toml.DecodeFile(configfile, &gConf)
 	gConf.RCPath = expandHomedir(gConf.RCPath)

@@ -67,6 +67,14 @@ function _ossie_exec_() {
 		}(gConf.ProtectEnv) + `
 	export ` + nestedEnvKey + `=` + nestedEnvVal + `
 }
+` +
+			func(a bool) string {
+				if a {
+					return "alias os=openstack; alias o=openstack;"
+				} else {
+					return ""
+				}
+			}(gConf.Aliases) + `
 
 function osenv() {
 	echo -n '` + strings.ReplaceAll(export, "OS_PASSWORD="+cloud.Env["OS_PASSWORD"], "OS_PASSWORD=****") + `'

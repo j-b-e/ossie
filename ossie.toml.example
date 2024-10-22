@@ -7,3 +7,6 @@ prompt = "%n:%r"
 
 # Ensures that "OS_" envars cant be overwritten in the spawned Shell
 protectEnv = true
+
+# Sets up Shell aliases 'os' and 'o'
+aliases = false

@@ -82,19 +82,6 @@ func main() {
 
 			},
 			{
-				Name:   "export",
-				Usage:  "Export active environment to stdout",
-				Action: exportAction,
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:        "mode",
-						Usage:       "export mode: \"rc\" or \"yaml\"",
-						DefaultText: "rc",
-						Value:       "rc",
-					},
-				},
-			},
-			{
 				Name:   "info",
 				Usage:  "Shows active or selected environment",
 				Action: infoAction,
