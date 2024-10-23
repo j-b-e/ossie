@@ -14,8 +14,9 @@ A powerful Tool to manage Openstack Environments
 * Spawn Shell with selected Openstack environment from autodetected clouds.yaml or RC Files
 * Configurable Prompt
 * Protects OS_ env against accidental changes
-* Includes Quality-of-Life utilities
+* Includes Quality-of-Life enhancements
     * `osenv` - Prints `OS_*` Environment
+    * `o`and `os`aliases for `openstack`
 * Shell Support
     * Bash
 
