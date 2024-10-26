@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"context"
@@ -6,14 +6,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/j-b-e/ossie/internal/config"
+	"github.com/j-b-e/ossie/internal/model"
+	"github.com/j-b-e/ossie/internal/shell"
 	"github.com/urfave/cli/v3"
-)
-
-var version = "dev"
-
-const (
-	nestedEnvKey = "__OSSIE_SPAWNED"
-	nestedEnvVal = "righto"
 )
 
 type contextKey string
@@ -23,24 +19,24 @@ func debugNYI(ctx context.Context, cmd *cli.Command) {
 	fmt.Printf("Flagnames: %#v\n", cmd.FlagNames())
 	fmt.Printf("LocalFlags: %#v\n", cmd.LocalFlagNames())
 	fmt.Printf("Flags: %v\n", cmd.Flags)
-	fmt.Printf("Config: %#v\n", ctx.Value(Config{}))
-	fmt.Printf("Config RCPath: %s\n", ctx.Value(Config{}).(Config).RCPath)
+	fmt.Printf("Config: %#v\n", ctx.Value(config.Config{}))
+	fmt.Printf("Config RCPath: %s\n", ctx.Value(config.Config{}).(config.Config).RCPath)
 	fmt.Println("NYI")
 }
 
 func rcAction(ctx context.Context, cmd *cli.Command) error {
 	arg := cmd.Args().First()
-	var cloud Cloud
+	var cloud model.Cloud
 	if arg == "" {
-		cloud = rcselector(gConf.clouds)
+		cloud = selector(config.Global.Clouds)
 	} else {
-		cloud = GetCloud(arg, gConf.clouds)
+		cloud = config.Global.Clouds.Select(arg)
 		if cloud.Name == "" {
 			return fmt.Errorf("Cloud %s not found.", arg)
 		}
 	}
 
-	SpawnEnv(cloud)
+	shell.SpawnEnv(cloud)
 	return nil
 }
 func exportAction(ctx context.Context, cmd *cli.Command) error {
@@ -53,19 +49,19 @@ func infoAction(ctx context.Context, cmd *cli.Command) error {
 }
 
 func checkForNested() {
-	env := os.Getenv(nestedEnvKey)
-	if env == nestedEnvVal {
+	env := os.Getenv(config.NestedEnvKey)
+	if env == config.NestedEnvVal {
 		fmt.Println("Exit current ossie session first.")
 		os.Exit(0)
 	}
 }
 
-func main() {
+func Ossie(version string) {
 	cmd := &cli.Command{
 		Name:    "ossie",
 		Usage:   "A powerful Tool to manage Openstack environments",
 		Version: version,
-		Before:  SetupConfig,
+		Before:  config.SetupConfig,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "config",
@@ -79,7 +75,6 @@ func main() {
 				Usage:     "Spawn Shell with selected environment",
 				Action:    rcAction,
 				ArgsUsage: "[rc]",
-
 			},
 			{
 				Name:   "info",

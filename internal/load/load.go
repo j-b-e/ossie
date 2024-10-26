@@ -1,4 +1,4 @@
-package main
+package load
 
 import (
 	"bufio"
@@ -6,12 +6,15 @@ import (
 	"io"
 	"os"
 	"path"
+	"slices"
+	"strconv"
 	"strings"
 
+	"github.com/j-b-e/ossie/internal/model"
 	"gopkg.in/yaml.v3"
 )
 
-func loadClouds(rcPath string) []Cloud {
+func Clouds(rcPath string) model.Clouds {
 	cloudyml := loadCloudsYaml()
 	cloudrc := loadRCClouds(rcPath)
 	return append(cloudyml, cloudrc...)
@@ -20,22 +23,29 @@ func loadClouds(rcPath string) []Cloud {
 func extractCloudYamlEnv(input map[string]any) map[string]string {
 	result := make(map[string]string)
 	for key, value := range input {
+		if slices.Contains([]string{"log_file", "log_level", "operation_log", "cloud"}, key) {
+			//TODO: "cloud" subkey should merge from clouds-public.yml
+			// filter out keys
+			continue
+		}
 		switch v := value.(type) {
 		case string:
 			result["OS_"+strings.ToUpper(key)] = v
 		case map[string]any:
 			for subKey, subValue := range v {
-				if strVal, ok := subValue.(string); ok {
-					result["OS_"+strings.ToUpper(subKey)] = strVal
+				switch sv := subValue.(type) {
+				case string:
+					result["OS_"+strings.ToUpper(subKey)] = sv
+				case int:
+					result["OS_"+strings.ToUpper(subKey)] = strconv.Itoa(sv)
 				}
 			}
 		}
 	}
-
 	return result
 }
 
-func loadCloudsYaml() []Cloud {
+func loadCloudsYaml() model.Clouds {
 	var t map[string]any
 	home := os.Getenv("HOME")
 	f, err := os.Open(path.Join(home, ".config", "openstack", "clouds.yaml"))
@@ -45,23 +55,23 @@ func loadCloudsYaml() []Cloud {
 	}
 	bytes, _ := io.ReadAll(f)
 	_ = yaml.Unmarshal(bytes, &t)
-	clouds := []Cloud{}
 	tree, ok := t["clouds"].(map[string]any)
 	if !ok {
 		fmt.Println("No clouds found.")
 		return nil
 	}
+	clouds := model.Clouds{}
 	for k, v := range tree {
-		cloud := Cloud{Name: k}
+		cloud := model.Cloud{Name: k}
 		cloud.Env = extractCloudYamlEnv(v.(map[string]any))
 		clouds = append(clouds, cloud)
 	}
 	return clouds
 }
 
-func loadRCClouds(rcPath string) []Cloud {
+func loadRCClouds(rcPath string) model.Clouds {
 	files, _ := os.ReadDir(rcPath)
-	var clouds []Cloud
+	var clouds model.Clouds
 	for _, file := range files {
 		if file.IsDir() {
 			continue
@@ -73,15 +83,15 @@ func loadRCClouds(rcPath string) []Cloud {
 	return clouds
 }
 
-func loadRC(filePath string) Cloud {
+func loadRC(filePath string) model.Cloud {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return Cloud{}
+		return model.Cloud{}
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	name := filePath[strings.LastIndex(filePath, "/")+1:]
-	cloud := Cloud{Name: name, Env: make(map[string]string)}
+	cloud := model.Cloud{Name: name, Env: make(map[string]string)}
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "#") {
@@ -91,14 +101,14 @@ func loadRC(filePath string) Cloud {
 			continue
 		}
 		entry, _ := strings.CutPrefix(line, "export ")
-		split := strings.Split(entry, "=")
-		cloud.Env[split[0]] = split[1]
+		key, val, _ := strings.Cut(entry, "=")
+		cloud.Env[key] = val
 	}
 	if err := scanner.Err(); err != nil {
-		return Cloud{}
+		return model.Cloud{}
 	}
 	if len(cloud.Env) == 0 {
-		return Cloud{}
+		return model.Cloud{}
 	}
 	return cloud
 }

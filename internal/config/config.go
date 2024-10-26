@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"context"
@@ -8,20 +8,27 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/j-b-e/ossie/internal/load"
+	"github.com/j-b-e/ossie/internal/model"
 	"github.com/urfave/cli/v3"
 )
 
 var configDefaultPath = "~/.config/openstack/ossie.toml"
+
+const (
+	NestedEnvKey = "__OSSIE_SPAWNED"
+	NestedEnvVal = "righto"
+)
 
 type Config struct {
 	RCPath     string // Path to openstack rc files
 	Prompt     string // Prompt definiton
 	ProtectEnv bool   // Protect OS_ env against accidental modfication
 	Aliases    bool   // setup shell aliases o and os
-	clouds     []Cloud
+	Clouds     model.Clouds
 }
 
-var gConf Config
+var Global Config
 
 // Replace ~ with the home directory path
 func expandHomedir(path string) string {
@@ -40,18 +47,18 @@ func SetupConfig(_ context.Context, c *cli.Command) error {
 	if configfile == "" {
 		configfile = expandHomedir(configDefaultPath)
 	}
-	gConf = Config{
+	Global = Config{
 		// Set default values
 		RCPath:     "~/.config/openstack/",
 		Prompt:     "%n:%r",
 		ProtectEnv: true,
 		Aliases:    false,
 	}
-	toml.DecodeFile(configfile, &gConf)
-	gConf.RCPath = expandHomedir(gConf.RCPath)
+	toml.DecodeFile(configfile, &Global)
+	Global.RCPath = expandHomedir(Global.RCPath)
 
-	gConf.clouds = loadClouds(gConf.RCPath)
-	if len(gConf.clouds) == 0 {
+	Global.Clouds = load.Clouds(Global.RCPath)
+	if len(Global.Clouds) == 0 {
 		return fmt.Errorf("No clouds found")
 	}
 	return nil
