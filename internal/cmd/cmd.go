@@ -24,22 +24,33 @@ func debugNYI(ctx context.Context, cmd *cli.Command) {
 	fmt.Println("NYI")
 }
 
-func switchPrevious() {
+func detectPrevious() (model.Cloud, error) {
 	if !detectRunning() {
-		fmt.Println("No previous Session found.")
-		os.Exit(1)
+		return model.Cloud{}, fmt.Errorf("No Session is running.")
 	}
-	fmt.Printf("current shell: %s\n", shell.DetectShell())
-	os.Exit(1)
+	prev := shell.DetectShell().Prev()
+	if prev == nil || *prev == "-" {
+		return model.Cloud{}, fmt.Errorf("No Session is running.")
+	}
+
+	cloud := config.Global.Clouds.Select(*prev)
+	if cloud.Name == "" {
+		return model.Cloud{}, fmt.Errorf("Cloud %s not found.", *prev)
+	}
+	return cloud, nil
 }
 
 func rcAction(ctx context.Context, cmd *cli.Command) error {
 	arg := cmd.Args().First()
 	var cloud model.Cloud
+	var err error
 
 	switch arg {
 	case "-":
-		switchPrevious()
+		cloud, err = detectPrevious()
+		if err != nil {
+			return err
+		}
 	case "":
 		cloud = selector(config.Global.Clouds)
 	default:

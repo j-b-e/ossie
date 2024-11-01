@@ -15,6 +15,7 @@ import (
 type ShellHandler interface {
 	Spawn(model.Cloud)
 	Update(model.Cloud)
+	Prev() *string // returns previous session or nil if not found
 	fmt.Stringer
 }
 
@@ -46,7 +47,7 @@ func envToExport(cloud model.Cloud) string {
 
 func generatePrompt(cloud model.Cloud) string {
 	replacer := strings.NewReplacer(
-		"%n", cloud.Name,
+		"%n", "$"+bashCurrentSessionKey,
 		"%r", "$OS_REGION_NAME",
 		"%d", "$OS_DOMAIN_NAME",
 		"%p", "$OS_PROJECT_NAME",

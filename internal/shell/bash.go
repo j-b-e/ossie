@@ -15,12 +15,14 @@ import (
 type Bash struct{}
 
 const (
-	bashOsEnvFileKey   = "__OSSIE_OS_ENV_FILE"
-	bashPromptFileKey  = "__OSSIE_PROMPT_FILE"
-	bashSessionFileKey = "__OSSIE_SESSION_FILE"
+	bashOsEnvFileKey      = "__OSSIE_OS_ENV_FILE"
+	bashPromptFileKey     = "__OSSIE_PROMPT_FILE"
+	bashSessionFileKey    = "__OSSIE_SESSION_FILE"
+	bashCurrentSessionKey = "__OSSIE_CURRENT_SESSION_"
+	bashPrevSessionKey    = "__OSSIE_PREV_SESSION_"
 )
 
-func bashRC(cloud model.Cloud, osrc string, promptfile string) string {
+func bashRC(cloud model.Cloud, osrc string, promptfile string, sessionfile string) string {
 	const rcTempl = `
 if [[ -f "/etc/bash.bashrc" ]] ; then
   source "/etc/bash.bashrc"
@@ -30,6 +32,8 @@ if [[ -f "$HOME/.bashrc" ]] ; then
 fi
 export ` + bashOsEnvFileKey + `="{{ .osrc }}"
 export ` + bashPromptFileKey + `="{{ .promptfile }}"
+export ` + bashSessionFileKey + `="{{ .sessionfile }}"
+
 
 set -o allexport
 source $` + bashOsEnvFileKey + `
@@ -37,7 +41,11 @@ set +o allexport
 function _ossie_exec_ () {
   export {{ .nested_marker }}
   export ` + bashOsEnvFileKey + `="{{ .osrc }}"
-{{ if .protectenv }}
+  export ` + bashSessionFileKey + `="{{ .sessionfile }}"
+  set -o allexport
+  source $` + bashSessionFileKey + `
+  set +o allexport
+{{- if .protectenv }}
   unset ${!OS_*}
   set -o allexport
   source $` + bashOsEnvFileKey + `
@@ -71,6 +79,8 @@ PS1="[$(<{{ .promptfile }})]$_ossie_OLDPS"
 		"aliases":       config.Global.Aliases,
 		"osrc":          osrc,
 		"promptfile":    promptfile,
+		"sessionfile":   sessionfile,
+		"name":          cloud.Name,
 	}
 	err := t.Execute(&out, data)
 	if err != nil {
@@ -94,12 +104,21 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 	defer unix.Close(prompt.fd)
 	prompt.Write([]byte(generatePrompt(cloud)))
 
+	sessionfile, err := NewTempfile()
+	if err != nil {
+		panic(err)
+	}
+	defer unix.Close(sessionfile.fd)
+	sessionfile.Write([]byte(
+		"export " + bashCurrentSessionKey + "=\"" + cloud.Name + "\"\nexport " + bashPrevSessionKey + "=\"-\"",
+	))
+
 	ossierc, err := NewTempfile()
 	if err != nil {
 		panic(err)
 	}
 	defer unix.Close(ossierc.fd)
-	err = ossierc.Write([]byte(bashRC(cloud, osrc.Path(), prompt.Path())))
+	err = ossierc.Write([]byte(bashRC(cloud, osrc.Path(), prompt.Path(), sessionfile.Path())))
 
 	newEnv := []string{
 		fmt.Sprintf("%s=%s", config.NestedEnvKey, config.NestedEnvVal),
@@ -131,6 +150,8 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 }
 
 func (b *Bash) Update(cloud model.Cloud) {
+	currentSession := os.Getenv(bashCurrentSessionKey)
+
 	osEnvFile := os.Getenv(bashOsEnvFileKey)
 	err := replaceFileContent(osEnvFile, envToExport(cloud))
 	if err != nil {
@@ -141,8 +162,23 @@ func (b *Bash) Update(cloud model.Cloud) {
 	if err != nil {
 		panic(err)
 	}
+	sessionFile := os.Getenv(bashSessionFileKey)
+	err = replaceFileContent(sessionFile,
+		"export "+bashCurrentSessionKey+"=\""+cloud.Name+"\"\nexport "+bashPrevSessionKey+"=\""+currentSession+"\"",
+	)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (b Bash) String() string {
 	return "Bash"
+}
+
+func (b *Bash) Prev() *string {
+	osPrevSession := os.Getenv(bashPrevSessionKey)
+	if osPrevSession == "-" {
+		return nil
+	}
+	return &osPrevSession
 }
