@@ -1,8 +1,6 @@
 package shell
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"path"
@@ -14,19 +12,28 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-type Shell string
-
-const (
-	Bash Shell = "bash"
-)
+type ShellHandler interface {
+	Spawn(model.Cloud)
+	Update(model.Cloud)
+	fmt.Stringer
+}
 
 func SpawnEnv(cloud model.Cloud) {
-	switch detectShell() {
-	case Bash:
-		SpawnBash(cloud)
-	default:
+	shell := DetectShell()
+	if shell == nil {
 		fmt.Println("Shell not supported.")
+		return
 	}
+	shell.Spawn(cloud)
+}
+
+func UpdateEnv(cloud model.Cloud) {
+	shell := DetectShell()
+	if shell == nil {
+		fmt.Println("Shell not supported.")
+		return
+	}
+	shell.Update(cloud)
 }
 
 func envToExport(cloud model.Cloud) string {
@@ -50,36 +57,42 @@ func generatePrompt(cloud model.Cloud) string {
 }
 
 // Creates an in-memory tmpfile only accessible via file-descriptor
-type tmpfile []byte
+type Tmpfile struct {
+	path string
+	fd   int
+}
 
-// Returns path to tmpfile
-func (t tmpfile) Path() (path string, fd int) {
-	hash := sha256.Sum256(t)
-	hashStr := hex.EncodeToString(hash[:])
-	fd, err := unix.MemfdCreate(hashStr, 0)
+func NewTempfile() (Tmpfile, error) {
+	fd, err := unix.MemfdCreate("ossie_tmp", 0)
 	if err != nil {
-		return
+		return Tmpfile{}, err
+	}
+	fp := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), fd)
+	return Tmpfile{path: fp, fd: fd}, nil
+}
+
+func (t Tmpfile) Path() (path string) {
+	return t.path
+}
+
+func (t Tmpfile) Write(content []byte) error {
+	err := unix.Ftruncate(t.fd, int64(len(content)))
+	if err != nil {
+		return err
 	}
 
-	err = unix.Ftruncate(fd, int64(len(t)))
+	data, err := unix.Mmap(t.fd, 0, len(content), unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
 	if err != nil {
-		return
+		return err
 	}
 
-	data, err := unix.Mmap(fd, 0, len(t), unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
-	if err != nil {
-		return
-	}
-
-	copy(data, t)
+	copy(data, content)
 
 	err = unix.Munmap(data)
 	if err != nil {
-		return
+		return err
 	}
-
-	fp := fmt.Sprintf("/proc/self/fd/%d", fd)
-	return fp, fd
+	return nil
 }
 
 // returns parent pid and parent cmd of a pid
@@ -98,20 +111,35 @@ func parentPid(pid int) (int, string) {
 }
 
 // walkPidTree finds first ancestor which is a known shell
-func walkPidTree(pid int) Shell {
+func walkPidTree(pid int) ShellHandler {
 	ppid, cmd := parentPid(pid)
 
 	switch {
 	case strings.Contains(cmd, "bash"):
-		return Bash
+		return &Bash{}
 	default:
 		if ppid != 1 {
 			return walkPidTree(ppid)
 		}
 	}
-	return Shell("unknown")
+	return nil
 }
 
-func detectShell() Shell {
+func DetectShell() ShellHandler {
 	return walkPidTree(os.Getpid())
+}
+
+func replaceFileContent(filePath, content string) error {
+	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(content)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

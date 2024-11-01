@@ -24,36 +24,49 @@ func debugNYI(ctx context.Context, cmd *cli.Command) {
 	fmt.Println("NYI")
 }
 
+func switchPrevious() {
+	if !detectRunning() {
+		fmt.Println("No previous Session found.")
+		os.Exit(1)
+	}
+	fmt.Printf("current shell: %s\n", shell.DetectShell())
+	os.Exit(1)
+}
+
 func rcAction(ctx context.Context, cmd *cli.Command) error {
 	arg := cmd.Args().First()
 	var cloud model.Cloud
-	if arg == "" {
+
+	switch arg {
+	case "-":
+		switchPrevious()
+	case "":
 		cloud = selector(config.Global.Clouds)
-	} else {
+	default:
 		cloud = config.Global.Clouds.Select(arg)
 		if cloud.Name == "" {
 			return fmt.Errorf("Cloud %s not found.", arg)
 		}
 	}
+	if !detectRunning() {
+		shell.SpawnEnv(cloud)
+	} else {
+		shell.UpdateEnv(cloud)
+	}
+	return nil
+}
 
-	shell.SpawnEnv(cloud)
-	return nil
-}
-func exportAction(ctx context.Context, cmd *cli.Command) error {
-	debugNYI(ctx, cmd)
-	return nil
-}
 func infoAction(ctx context.Context, cmd *cli.Command) error {
 	debugNYI(ctx, cmd)
 	return nil
 }
 
-func checkForNested() {
+func detectRunning() bool {
 	env := os.Getenv(config.NestedEnvKey)
 	if env == config.NestedEnvVal {
-		fmt.Println("Exit current ossie session first.")
-		os.Exit(0)
+		return true
 	}
+	return false
 }
 
 func Ossie(version string) {
@@ -83,8 +96,6 @@ func Ossie(version string) {
 			},
 		},
 	}
-
-	checkForNested()
 
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
