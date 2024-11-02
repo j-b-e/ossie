@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -183,7 +184,7 @@ func (b Bash) String() string {
 
 func (b *Bash) Prev() *string {
 	osPrevSession := os.Getenv(bashPrevSessionKey)
-	if osPrevSession == "-" {
+	if slices.Contains([]string{"-", ""}, osPrevSession) {
 		return nil
 	}
 	return &osPrevSession

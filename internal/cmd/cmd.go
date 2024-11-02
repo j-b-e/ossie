@@ -27,8 +27,8 @@ func detectPrevious() (model.Cloud, error) {
 		return model.Cloud{}, fmt.Errorf("No Session is running.")
 	}
 	prev := shell.DetectShell().Prev()
-	if prev == nil || *prev == "-" {
-		return model.Cloud{}, fmt.Errorf("No Session is running.")
+	if prev == nil {
+		return model.Cloud{}, fmt.Errorf("No previous session found.")
 	}
 
 	cloud := config.Global.Clouds.Select(*prev)
