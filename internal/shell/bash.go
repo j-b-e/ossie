@@ -13,7 +13,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-type Bash struct{}
+type bash struct{}
 
 const (
 	bashOsEnvFileKey      = "__OSSIE_OS_ENV_FILE"
@@ -23,7 +23,7 @@ const (
 	bashPrevSessionKey    = "__OSSIE_PREV_SESSION_"
 )
 
-func bashRC(cloud model.Cloud, osrc string, promptfile string, sessionfile string) string {
+func bashRC(osrc string, promptfile string, sessionfile string) string {
 	const rcTempl = `
 if [[ -f "/etc/bash.bashrc" ]] ; then
   source "/etc/bash.bashrc"
@@ -89,13 +89,14 @@ PS1="[$(<{{ .promptfile }})]$_ossie_OLDPS"
 	return out.String()
 }
 
-func (b *Bash) Spawn(cloud model.Cloud) {
+// Spawn executes new Shell environment
+func (b *bash) Spawn(cloud model.Cloud) {
 	osrc, err := NewTempfile()
 	if err != nil {
 		panic(err)
 	}
 	defer unix.Close(osrc.fd)
-	err = osrc.Write([]byte(envToExport(cloud)))
+	_, err = osrc.Write([]byte(envToExport(cloud)))
 	if err != nil {
 		panic(err)
 	}
@@ -105,7 +106,7 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 		panic(err)
 	}
 	defer unix.Close(prompt.fd)
-	err = prompt.Write([]byte(generatePrompt()))
+	_, err = prompt.Write([]byte(generatePrompt()))
 	if err != nil {
 		panic(err)
 	}
@@ -115,7 +116,7 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 		panic(err)
 	}
 	defer unix.Close(sessionfile.fd)
-	err = sessionfile.Write([]byte(
+	_, err = sessionfile.Write([]byte(
 		"export " + bashCurrentSessionKey + "=\"" + cloud.Name + "\"\nexport " + bashPrevSessionKey + "=\"-\"",
 	))
 	if err != nil {
@@ -127,7 +128,7 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 		panic(err)
 	}
 	defer unix.Close(ossierc.fd)
-	err = ossierc.Write([]byte(bashRC(cloud, osrc.Path(), prompt.Path(), sessionfile.Path())))
+	_, err = ossierc.Write([]byte(bashRC(osrc.Path(), prompt.Path(), sessionfile.Path())))
 	if err != nil {
 		panic(err)
 	}
@@ -156,7 +157,8 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 	}
 }
 
-func (b *Bash) Update(cloud model.Cloud) {
+// Update sets new env without spawning a New shell
+func (b *bash) Update(cloud model.Cloud) {
 	currentSession := os.Getenv(bashCurrentSessionKey)
 
 	osEnvFile := os.Getenv(bashOsEnvFileKey)
@@ -178,11 +180,12 @@ func (b *Bash) Update(cloud model.Cloud) {
 	}
 }
 
-func (b Bash) String() string {
+func (b bash) String() string {
 	return "Bash"
 }
 
-func (b *Bash) Prev() *string {
+// Prev returns previous session name
+func (b *bash) Prev() *string {
 	osPrevSession := os.Getenv(bashPrevSessionKey)
 	if slices.Contains([]string{"-", ""}, osPrevSession) {
 		return nil

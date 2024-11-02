@@ -1,5 +1,5 @@
 # Path to RC Files, clouds.yaml from standard Paths will always be loaded
-rcpath = "/home/user/.config/openstack"
+rcpath = "~/.config/openstack"
 
 # Customize prompt
 # %n = Name, %r = Region, %d = Domain, %p = Project, %u = User

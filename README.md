@@ -8,7 +8,6 @@ A powerful Tool to manage Openstack Environments
 * `ossie rc <rc>` Spawns a new shell with the selected  Openstack environment
 * `ossie info <rc>` Shows information about the Openstack environment
 
-
 ## Features
 
 * Spawn Shell with selected Openstack environment from autodetected clouds.yaml or RC Files
@@ -27,8 +26,6 @@ Have a look in `ossie.toml.example` for available Settings. Run ossie with `-c <
 ## Installation
 
 Download the latest **ossie** Binary from [Github Releases](https://github.com/j-b-e/ossie/releases) and place the file in your PATH.
-
-
 
 ---
 _**Ossie** is inspired by [Kubie](https://github.com/sbstp/kubie)_

@@ -48,7 +48,7 @@ func SetupConfig(_ context.Context, c *cli.Command) error {
 		configfile = expandHomedir(configDefaultPath)
 	}
 	Global = Config{
-		// Set default values
+		// The default values
 		RCPath:     "~/.config/openstack/",
 		Prompt:     "%n:%r",
 		ProtectEnv: true,

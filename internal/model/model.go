@@ -31,8 +31,8 @@ func (c Cloud) String() string {
 	keys := make([]string, 0, len(c.Env))
 	var longest int
 	for k := range c.Env {
-		if len(k) > longest {
-			longest = len(k)
+		if l := len(k); l > longest {
+			longest = l
 		}
 		keys = append(keys, k)
 	}

@@ -13,7 +13,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-type ShellHandler interface {
+type Shell interface {
 	Spawn(model.Cloud)
 	Update(model.Cloud)
 	Prev() *string // returns previous session or nil if not found
@@ -58,12 +58,13 @@ func generatePrompt() string {
 	return prompt
 }
 
-// Creates an in-memory tmpfile only accessible via file-descriptor
+// Tmpfile creates an in-memory tmpfile only accessible via file-descriptor
 type Tmpfile struct {
 	path string
 	fd   int
 }
 
+// NewTempfile creates an in-memory tmpfile only accessible via file-descriptor
 func NewTempfile() (Tmpfile, error) {
 	fd, err := unix.MemfdCreate("ossie_tmp", 0)
 	if err != nil {
@@ -73,28 +74,29 @@ func NewTempfile() (Tmpfile, error) {
 	return Tmpfile{path: fp, fd: fd}, nil
 }
 
+// Path returns path in /proc to tempfile
 func (t Tmpfile) Path() (path string) {
 	return t.path
 }
 
-func (t Tmpfile) Write(content []byte) error {
+func (t Tmpfile) Write(content []byte) (int, error) {
 	err := unix.Ftruncate(t.fd, int64(len(content)))
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	data, err := unix.Mmap(t.fd, 0, len(content), unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	copy(data, content)
 
 	err = unix.Munmap(data)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return len(content), nil
 }
 
 // returns parent pid and parent cmd of a pid
@@ -113,12 +115,12 @@ func parentPid(pid int) (int, string) {
 }
 
 // walkPidTree finds first ancestor which is a known shell
-func walkPidTree(pid int) ShellHandler {
+func walkPidTree(pid int) Shell {
 	ppid, cmd := parentPid(pid)
 
 	switch {
 	case strings.Contains(cmd, "bash"):
-		return &Bash{}
+		return &bash{}
 	default:
 		if ppid != 1 {
 			return walkPidTree(ppid)
@@ -127,7 +129,7 @@ func walkPidTree(pid int) ShellHandler {
 	return nil
 }
 
-func DetectShell() ShellHandler {
+func DetectShell() Shell {
 	return walkPidTree(os.Getpid())
 }
 
