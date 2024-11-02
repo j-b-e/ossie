@@ -8,13 +8,6 @@ import (
 	fuzzy "github.com/ktr0731/go-fuzzyfinder"
 )
 
-func envStr(c model.Cloud, env, name string) string {
-	if env, ok := c.Env[env]; ok {
-		return name + ": " + env + "\n"
-	}
-	return ""
-}
-
 func preview(c model.Cloud) string {
 	var builder strings.Builder
 	builder.WriteString("Name: " + c.Name + "\n")

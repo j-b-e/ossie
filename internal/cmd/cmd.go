@@ -12,8 +12,6 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-type contextKey string
-
 func debugNYI(ctx context.Context, cmd *cli.Command) {
 	fmt.Printf("Args: %#v\n", cmd.Args())
 	fmt.Printf("Flagnames: %#v\n", cmd.FlagNames())
@@ -74,10 +72,7 @@ func infoAction(ctx context.Context, cmd *cli.Command) error {
 
 func detectRunning() bool {
 	env := os.Getenv(config.NestedEnvKey)
-	if env == config.NestedEnvVal {
-		return true
-	}
-	return false
+	return env == config.NestedEnvVal
 }
 
 func Ossie(version string) {

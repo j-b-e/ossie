@@ -30,13 +30,13 @@ func Test_generatePrompt(t *testing.T) {
 			name:   "test-basic",
 			args:   args{cloud: testCloud},
 			prompt: "%n:%r",
-			want:   testCloud.Name + ":$OS_REGION_NAME",
+			want:   "$" + bashCurrentSessionKey + ":$OS_REGION_NAME",
 		},
 		{
 			name:   "test-basic",
 			args:   args{cloud: testCloud},
 			prompt: "%n:%r:%u:%u:%p:%%d%d",
-			want:   testCloud.Name + ":$OS_REGION_NAME:$OS_USERNAME:$OS_USERNAME:$OS_PROJECT_NAME:%$OS_DOMAIN_NAME$OS_DOMAIN_NAME",
+			want:   "$" + bashCurrentSessionKey + ":$OS_REGION_NAME:$OS_USERNAME:$OS_USERNAME:$OS_PROJECT_NAME:%$OS_DOMAIN_NAME$OS_DOMAIN_NAME",
 		},
 	}
 	for _, tt := range tests {

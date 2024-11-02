@@ -54,7 +54,10 @@ func SetupConfig(_ context.Context, c *cli.Command) error {
 		ProtectEnv: true,
 		Aliases:    false,
 	}
-	toml.DecodeFile(configfile, &Global)
+	_, err := toml.DecodeFile(configfile, &Global)
+	if err != nil {
+		return err
+	}
 	Global.RCPath = expandHomedir(Global.RCPath)
 
 	Global.Clouds = load.Clouds(Global.RCPath)

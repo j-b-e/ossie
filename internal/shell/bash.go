@@ -80,7 +80,6 @@ PS1="[$(<{{ .promptfile }})]$_ossie_OLDPS"
 		"osrc":          osrc,
 		"promptfile":    promptfile,
 		"sessionfile":   sessionfile,
-		"name":          cloud.Name,
 	}
 	err := t.Execute(&out, data)
 	if err != nil {
@@ -95,23 +94,32 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 		panic(err)
 	}
 	defer unix.Close(osrc.fd)
-	osrc.Write([]byte(envToExport(cloud)))
+	err = osrc.Write([]byte(envToExport(cloud)))
+	if err != nil {
+		panic(err)
+	}
 
 	prompt, err := NewTempfile()
 	if err != nil {
 		panic(err)
 	}
 	defer unix.Close(prompt.fd)
-	prompt.Write([]byte(generatePrompt(cloud)))
+	err = prompt.Write([]byte(generatePrompt(cloud)))
+	if err != nil {
+		panic(err)
+	}
 
 	sessionfile, err := NewTempfile()
 	if err != nil {
 		panic(err)
 	}
 	defer unix.Close(sessionfile.fd)
-	sessionfile.Write([]byte(
+	err = sessionfile.Write([]byte(
 		"export " + bashCurrentSessionKey + "=\"" + cloud.Name + "\"\nexport " + bashPrevSessionKey + "=\"-\"",
 	))
+	if err != nil {
+		panic(err)
+	}
 
 	ossierc, err := NewTempfile()
 	if err != nil {
@@ -119,12 +127,10 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 	}
 	defer unix.Close(ossierc.fd)
 	err = ossierc.Write([]byte(bashRC(cloud, osrc.Path(), prompt.Path(), sessionfile.Path())))
-
-	newEnv := []string{
-		fmt.Sprintf("%s=%s", config.NestedEnvKey, config.NestedEnvVal),
+	if err != nil {
+		panic(err)
 	}
 
-	newEnv = append(newEnv, os.Environ()...)
 	newCmd := []string{
 		"bash",
 		"--noprofile",
