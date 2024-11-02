@@ -46,7 +46,7 @@ func envToExport(cloud model.Cloud) string {
 	return export
 }
 
-func generatePrompt(cloud model.Cloud) string {
+func generatePrompt() string {
 	replacer := strings.NewReplacer(
 		"%n", "$"+bashCurrentSessionKey,
 		"%r", "$OS_REGION_NAME",

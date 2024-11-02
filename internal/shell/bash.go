@@ -105,7 +105,7 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 		panic(err)
 	}
 	defer unix.Close(prompt.fd)
-	err = prompt.Write([]byte(generatePrompt(cloud)))
+	err = prompt.Write([]byte(generatePrompt()))
 	if err != nil {
 		panic(err)
 	}
@@ -165,7 +165,7 @@ func (b *Bash) Update(cloud model.Cloud) {
 		panic(err)
 	}
 	promptFile := os.Getenv(bashPromptFileKey)
-	err = replaceFileContent(promptFile, generatePrompt(cloud))
+	err = replaceFileContent(promptFile, generatePrompt())
 	if err != nil {
 		panic(err)
 	}
