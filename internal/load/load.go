@@ -62,7 +62,7 @@ func loadCloudsYaml() model.Clouds {
 	}
 	clouds := model.Clouds{}
 	for k, v := range tree {
-		cloud := model.Cloud{Name: k}
+		cloud := model.Cloud{Name: k, Source: "~/.config/openstack/clouds.yaml"}
 		cloud.Env = extractCloudYamlEnv(v.(map[string]any))
 		clouds = append(clouds, cloud)
 	}
@@ -91,7 +91,7 @@ func loadRC(filePath string) model.Cloud {
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	name := filePath[strings.LastIndex(filePath, "/")+1:]
-	cloud := model.Cloud{Name: name, Env: make(map[string]string)}
+	cloud := model.Cloud{Name: name, Env: make(map[string]string), Source: filePath}
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "#") {

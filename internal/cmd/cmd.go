@@ -12,16 +12,6 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-func debugNYI(ctx context.Context, cmd *cli.Command) {
-	fmt.Printf("Args: %#v\n", cmd.Args())
-	fmt.Printf("Flagnames: %#v\n", cmd.FlagNames())
-	fmt.Printf("LocalFlags: %#v\n", cmd.LocalFlagNames())
-	fmt.Printf("Flags: %v\n", cmd.Flags)
-	fmt.Printf("Config: %#v\n", ctx.Value(config.Config{}))
-	fmt.Printf("Config RCPath: %s\n", ctx.Value(config.Config{}).(config.Config).RCPath)
-	fmt.Println("NYI")
-}
-
 func detectPrevious() (model.Cloud, error) {
 	if !detectRunning() {
 		return model.Cloud{}, fmt.Errorf("No Session is running.")
@@ -66,7 +56,20 @@ func rcAction(ctx context.Context, cmd *cli.Command) error {
 }
 
 func infoAction(ctx context.Context, cmd *cli.Command) error {
-	debugNYI(ctx, cmd)
+	arg := cmd.Args().First()
+	var cloud model.Cloud
+
+	switch arg {
+
+	case "":
+		cloud = selector(config.Global.Clouds)
+	default:
+		cloud = config.Global.Clouds.Select(arg)
+		if cloud.Name == "" {
+			return fmt.Errorf("Cloud %s not found.", arg)
+		}
+	}
+	fmt.Println(cloud)
 	return nil
 }
 
