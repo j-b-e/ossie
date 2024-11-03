@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/j-b-e/ossie/internal/model"
 	fuzzy "github.com/ktr0731/go-fuzzyfinder"
 )
 
-func selector(c model.Clouds) model.Cloud {
+func selector(c model.Clouds) (model.Cloud, error) {
 	idx, err := fuzzy.Find(
 		c,
 		func(i int) string {
@@ -21,7 +19,7 @@ func selector(c model.Clouds) model.Cloud {
 		}),
 	)
 	if err != nil {
-		log.Fatal(err)
+		return model.Cloud{}, err
 	}
-	return c[idx]
+	return c[idx], nil
 }

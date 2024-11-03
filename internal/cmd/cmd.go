@@ -14,16 +14,16 @@ import (
 
 func detectPrevious() (model.Cloud, error) {
 	if !detectRunning() {
-		return model.Cloud{}, fmt.Errorf("No Session is running.")
+		return model.Cloud{}, fmt.Errorf("no Session is running")
 	}
 	prev := shell.DetectShell().Prev()
 	if prev == nil {
-		return model.Cloud{}, fmt.Errorf("No previous session found.")
+		return model.Cloud{}, fmt.Errorf("no previous session found")
 	}
 
 	cloud := config.Global.Clouds.Select(*prev)
 	if cloud.Name == "" {
-		return model.Cloud{}, fmt.Errorf("Cloud %s not found.", *prev)
+		return model.Cloud{}, fmt.Errorf("cloud %s not found", *prev)
 	}
 	return cloud, nil
 }
@@ -40,11 +40,14 @@ func rcAction(ctx context.Context, cmd *cli.Command) error {
 			return err
 		}
 	case "":
-		cloud = selector(config.Global.Clouds)
+		cloud, err = selector(config.Global.Clouds)
+		if err != nil {
+			return err
+		}
 	default:
 		cloud = config.Global.Clouds.Select(arg)
 		if cloud.Name == "" {
-			return fmt.Errorf("Cloud %s not found.", arg)
+			return fmt.Errorf("cloud %s not found", arg)
 		}
 	}
 	if !detectRunning() {
@@ -58,15 +61,19 @@ func rcAction(ctx context.Context, cmd *cli.Command) error {
 func infoAction(ctx context.Context, cmd *cli.Command) error {
 	arg := cmd.Args().First()
 	var cloud model.Cloud
+	var err error
 
 	switch arg {
 
 	case "":
-		cloud = selector(config.Global.Clouds)
+		cloud, err = selector(config.Global.Clouds)
+		if err != nil {
+			return err
+		}
 	default:
 		cloud = config.Global.Clouds.Select(arg)
 		if cloud.Name == "" {
-			return fmt.Errorf("Cloud %s not found.", arg)
+			return fmt.Errorf("cloud %s not found", arg)
 		}
 	}
 	fmt.Println(cloud)

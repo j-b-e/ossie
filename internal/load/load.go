@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"reflect"
 	"slices"
 	"strconv"
 	"strings"
@@ -20,7 +21,7 @@ func Clouds(rcPath string) model.Clouds {
 	return append(cloudyml, cloudrc...)
 }
 
-func extractCloudYamlEnv(input map[string]any) map[string]string {
+func extractCloudYamlEnv(input map[string]any) (map[string]string, error) {
 	result := make(map[string]string)
 	for key, value := range input {
 		if slices.Contains([]string{"log_file", "log_level", "operation_log", "cloud"}, key) {
@@ -38,11 +39,15 @@ func extractCloudYamlEnv(input map[string]any) map[string]string {
 					result["OS_"+strings.ToUpper(subKey)] = sv
 				case int:
 					result["OS_"+strings.ToUpper(subKey)] = strconv.Itoa(sv)
+				default:
+					return nil, fmt.Errorf("unexpected type encountered: %v:%s", sv, reflect.TypeOf(sv))
 				}
 			}
+		default:
+			return nil, fmt.Errorf("unexpected type encountered: %v:%s", v, reflect.TypeOf(v))
 		}
 	}
-	return result
+	return result, nil
 }
 
 func loadCloudsYaml() model.Clouds {
@@ -63,7 +68,11 @@ func loadCloudsYaml() model.Clouds {
 	clouds := model.Clouds{}
 	for k, v := range tree {
 		cloud := model.Cloud{Name: k, Source: "~/.config/openstack/clouds.yaml"}
-		cloud.Env = extractCloudYamlEnv(v.(map[string]any))
+		cloud.Env, err = extractCloudYamlEnv(v.(map[string]any))
+		if err != nil {
+			fmt.Printf("error: could not load cloud \"%s\": %s\n", k, err)
+			continue
+		}
 		clouds = append(clouds, cloud)
 	}
 	return clouds

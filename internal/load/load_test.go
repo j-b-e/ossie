@@ -85,7 +85,11 @@ func Test_extractCloudYamlEnv(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := extractCloudYamlEnv(tt.input); !reflect.DeepEqual(got, tt.want) {
+			got, err := extractCloudYamlEnv(tt.input)
+			if err != nil {
+				t.Errorf("extractCloudYamlEnv() unexpected error %v, want  %v", err, tt.want)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("extractCloudYamlEnv() = %v, want %v", got, tt.want)
 			}
 		})
