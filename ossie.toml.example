@@ -1,12 +1,11 @@
 # Path to RC Files, clouds.yaml from standard Paths will always be loaded
-rcpath = "~/.config/openstack"
+RCPath = "~/.config/openstack/"
 
-# Customize prompt
-# %n = Name, %r = Region, %d = Domain, %p = Project, %u = User
-prompt = "%n:%r"
+# Customize prompt: %n = Name, %r = Region, %d = Domain, %p = Project, %u = User
+Prompt = "%n:%r"
 
 # Ensures that "OS_" envars cant be overwritten in the spawned Shell
-protectEnv = true
+ProtectEnv = true
 
 # Sets up Shell aliases 'os' and 'o'
-aliases = false
+Aliases = false

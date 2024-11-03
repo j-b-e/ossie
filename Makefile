@@ -23,3 +23,6 @@ release: goreleaser
 
 test:
 	@go test ./...
+
+gen-example:
+	@go run tools/gen_example.go

@@ -9,10 +9,11 @@ import (
 // Cloud represents an Openstack environment with env vars
 type Cloud struct {
 	Name   string
-	Source string
 	Env    map[string]string
+	Source string // sourcefile of this env
 }
 
+// Clouds includes all found environments
 type Clouds []Cloud
 
 // Select a cloud by name

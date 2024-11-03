@@ -20,15 +20,24 @@ const (
 	NestedEnvVal = "righto"
 )
 
+// Config is the ossie configuration
 type Config struct {
-	RCPath     string // Path to openstack rc files
-	Prompt     string // Prompt definiton
-	ProtectEnv bool   // Protect OS_ env against accidental modfication
-	Aliases    bool   // setup shell aliases o and os
+	// Comments will be used for generating ossie.toml.example
+	RCPath     string // Path to RC Files, clouds.yaml from standard Paths will always be loaded
+	Prompt     string // Customize prompt: %n = Name, %r = Region, %d = Domain, %p = Project, %u = User
+	ProtectEnv bool   // Ensures that "OS_" envars cant be overwritten in the spawned Shell
+	Aliases    bool   // Sets up Shell aliases 'os' and 'o'
 	Clouds     model.Clouds
 }
 
-var Global Config
+// Global ossie configuration
+var Global = Config{
+	// The default values
+	RCPath:     "~/.config/openstack",
+	Prompt:     "%n:%r",
+	ProtectEnv: true,
+	Aliases:    false,
+}
 
 // Replace ~ with the home directory path
 func expandHomedir(path string) string {
@@ -42,17 +51,11 @@ func expandHomedir(path string) string {
 	return path
 }
 
+// SetupConfig loads configfiles and sets up global ossie configuration
 func SetupConfig(_ context.Context, c *cli.Command) error {
 	configfile := expandHomedir(c.String("config"))
 	if configfile == "" {
 		configfile = expandHomedir(configDefaultPath)
-	}
-	Global = Config{
-		// The default values
-		RCPath:     "~/.config/openstack/",
-		Prompt:     "%n:%r",
-		ProtectEnv: true,
-		Aliases:    false,
 	}
 	_, err := toml.DecodeFile(configfile, &Global)
 	if err != nil {
