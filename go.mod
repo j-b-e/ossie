@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/BurntSushi/toml v1.4.0
 	github.com/ktr0731/go-fuzzyfinder v0.8.0
-	github.com/urfave/cli/v3 v3.0.0-alpha9.2
+	github.com/urfave/cli/v3 v3.0.0-beta1
 	golang.org/x/sys v0.26.0
 	gopkg.in/yaml.v3 v3.0.1
 )
