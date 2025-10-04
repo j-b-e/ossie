@@ -42,7 +42,7 @@ func expandHomedir(path string) string {
 	return path
 }
 
-func SetupConfig(_ context.Context, c *cli.Command) error {
+func SetupConfig(ctx context.Context, c *cli.Command) (context.Context, error) {
 	configfile := expandHomedir(c.String("config"))
 	if configfile == "" {
 		configfile = expandHomedir(configDefaultPath)
@@ -56,13 +56,13 @@ func SetupConfig(_ context.Context, c *cli.Command) error {
 	}
 	_, err := toml.DecodeFile(configfile, &Global)
 	if err != nil {
-		return err
+		return ctx, err
 	}
 	Global.RCPath = expandHomedir(Global.RCPath)
 
 	Global.Clouds = load.Clouds(Global.RCPath)
 	if len(Global.Clouds) == 0 {
-		return fmt.Errorf("No clouds found")
+		return ctx, fmt.Errorf("No clouds found")
 	}
-	return nil
+	return ctx, nil
 }
