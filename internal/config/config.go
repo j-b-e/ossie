@@ -21,10 +21,11 @@ const (
 )
 
 type Config struct {
-	RCPath     string // Path to openstack rc files
-	Prompt     string // Prompt definiton
-	ProtectEnv bool   // Protect OS_ env against accidental modfication
-	Aliases    bool   // setup shell aliases o and os
+	RCPath     string  `toml:"rcpath"`     // Path to openstack rc files
+	Prompt     string  `toml:"prompt"`     // Prompt definiton
+	ProtectEnv bool    `toml:"protectenv"` // Protect OS_ env against accidental modfication
+	Aliases    bool    `toml:"aliases"`    // setup shell aliases o and os
+	Shell      *string `toml:"shell"`      // which shell to use (disables autodetect)
 	Clouds     model.Clouds
 }
 

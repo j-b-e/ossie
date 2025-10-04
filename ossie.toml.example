@@ -10,3 +10,6 @@ protectEnv = true
 
 # Sets up Shell aliases 'os' and 'o'
 aliases = false
+
+# (Optional) Force a shell, this disables autodetection
+# shell = "bash"

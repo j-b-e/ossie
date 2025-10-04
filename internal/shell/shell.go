@@ -20,13 +20,21 @@ type ShellHandler interface {
 	fmt.Stringer
 }
 
-func SpawnEnv(cloud model.Cloud) {
-	shell := DetectShell()
+func SpawnEnv(shell *string, cloud model.Cloud) {
+	var newshell ShellHandler
 	if shell == nil {
+		newshell = DetectShell()
+	} else {
+		switch *shell {
+		case "bash":
+			newshell = &Bash{}
+		}
+	}
+	if newshell == nil {
 		fmt.Println("Shell not supported.")
 		return
 	}
-	shell.Spawn(cloud)
+	newshell.Spawn(cloud)
 }
 
 func UpdateEnv(cloud model.Cloud) {

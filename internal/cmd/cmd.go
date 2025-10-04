@@ -48,7 +48,7 @@ func rcAction(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 	if !detectRunning() {
-		shell.SpawnEnv(cloud)
+		shell.SpawnEnv(config.Global.Shell, cloud)
 	} else {
 		shell.UpdateEnv(cloud)
 	}
