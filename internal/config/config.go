@@ -62,7 +62,7 @@ func SetupConfig(ctx context.Context, c *cli.Command) (context.Context, error) {
 
 	Global.Clouds = load.Clouds(Global.RCPath)
 	if len(Global.Clouds) == 0 {
-		return ctx, fmt.Errorf("No clouds found")
+		return ctx, fmt.Errorf("no clouds found")
 	}
 	return ctx, nil
 }

@@ -94,7 +94,9 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 	if err != nil {
 		panic(err)
 	}
-	defer unix.Close(osrc.fd)
+	defer func() {
+		_ = unix.Close(osrc.fd)
+	}()
 	err = osrc.Write([]byte(envToExport(cloud)))
 	if err != nil {
 		panic(err)
@@ -104,7 +106,9 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 	if err != nil {
 		panic(err)
 	}
-	defer unix.Close(prompt.fd)
+	defer func() {
+		_ = unix.Close(prompt.fd)
+	}()
 	err = prompt.Write([]byte(generatePrompt(cloud)))
 	if err != nil {
 		panic(err)
@@ -114,7 +118,9 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 	if err != nil {
 		panic(err)
 	}
-	defer unix.Close(sessionfile.fd)
+	defer func() {
+		_ = unix.Close(sessionfile.fd)
+	}()
 	err = sessionfile.Write([]byte(
 		"export " + bashCurrentSessionKey + "=\"" + cloud.Name + "\"\nexport " + bashPrevSessionKey + "=\"-\"",
 	))
@@ -126,7 +132,9 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 	if err != nil {
 		panic(err)
 	}
-	defer unix.Close(ossierc.fd)
+	defer func() {
+		_ = unix.Close(ossierc.fd)
+	}()
 	err = ossierc.Write([]byte(bashRC(cloud, osrc.Path(), prompt.Path(), sessionfile.Path())))
 	if err != nil {
 		panic(err)

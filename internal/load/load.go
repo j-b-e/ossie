@@ -88,7 +88,9 @@ func loadRC(filePath string) model.Cloud {
 	if err != nil {
 		return model.Cloud{}
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 	scanner := bufio.NewScanner(file)
 	name := filePath[strings.LastIndex(filePath, "/")+1:]
 	cloud := model.Cloud{Name: name, Env: make(map[string]string), Source: filePath}

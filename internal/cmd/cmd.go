@@ -14,16 +14,16 @@ import (
 
 func detectPrevious() (model.Cloud, error) {
 	if !detectRunning() {
-		return model.Cloud{}, fmt.Errorf("No Session is running.")
+		return model.Cloud{}, fmt.Errorf("no Session is running")
 	}
 	prev := shell.DetectShell().Prev()
 	if prev == nil {
-		return model.Cloud{}, fmt.Errorf("No previous session found.")
+		return model.Cloud{}, fmt.Errorf("no previous session found")
 	}
 
 	cloud := config.Global.Clouds.Select(*prev)
 	if cloud.Name == "" {
-		return model.Cloud{}, fmt.Errorf("Cloud %s not found.", *prev)
+		return model.Cloud{}, fmt.Errorf("cloud %s not found", *prev)
 	}
 	return cloud, nil
 }
@@ -44,7 +44,7 @@ func rcAction(ctx context.Context, cmd *cli.Command) error {
 	default:
 		cloud = config.Global.Clouds.Select(arg)
 		if cloud.Name == "" {
-			return fmt.Errorf("Cloud %s not found.", arg)
+			return fmt.Errorf("cloud %s not found", arg)
 		}
 	}
 	if !detectRunning() {
@@ -66,7 +66,7 @@ func infoAction(ctx context.Context, cmd *cli.Command) error {
 	default:
 		cloud = config.Global.Clouds.Select(arg)
 		if cloud.Name == "" {
-			return fmt.Errorf("Cloud %s not found.", arg)
+			return fmt.Errorf("cloud %s not found", arg)
 		}
 	}
 	fmt.Println(cloud)
