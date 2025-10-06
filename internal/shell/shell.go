@@ -13,10 +13,11 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// ShellHandler defines a common interface for all shells
 type ShellHandler interface {
-	Spawn(model.Cloud)
-	Update(model.Cloud)
-	Prev() *string // returns previous session or nil if not found
+	Spawn(model.Cloud)  // Spawns the Shell with environment set for selected Openstack Environment
+	Update(model.Cloud) // Updates current session in place
+	Prev() *string      // returns previous session or nil if not found
 	fmt.Stringer
 }
 
@@ -90,15 +91,7 @@ func (t Tmpfile) Write(content []byte) error {
 	if err != nil {
 		return err
 	}
-
-	data, err := unix.Mmap(t.fd, 0, len(content), unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
-	if err != nil {
-		return err
-	}
-
-	copy(data, content)
-
-	err = unix.Munmap(data)
+	_, err = unix.Write(t.fd, content)
 	if err != nil {
 		return err
 	}

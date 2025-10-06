@@ -27,7 +27,7 @@ const (
 	bashPrevSessionKey    = "__OSSIE_PREV_SESSION_"
 )
 
-func bashRC(cloud model.Cloud, osrc string, promptfile string, sessionfile string) string {
+func bashRC(osrc string, promptfile string, sessionfile string) string {
 
 	var out strings.Builder
 	t := template.Must(template.New("rc").Parse(rcTempl))
@@ -95,7 +95,7 @@ func (b *Bash) Spawn(cloud model.Cloud) {
 	defer func() {
 		_ = unix.Close(ossierc.fd)
 	}()
-	err = ossierc.Write([]byte(bashRC(cloud, osrc.Path(), prompt.Path(), sessionfile.Path())))
+	err = ossierc.Write([]byte(bashRC(osrc.Path(), prompt.Path(), sessionfile.Path())))
 	if err != nil {
 		panic(err)
 	}
