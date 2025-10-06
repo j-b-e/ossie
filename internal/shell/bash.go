@@ -1,6 +1,7 @@
 package shell
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"os/exec"
@@ -13,6 +14,9 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+//go:embed bashrc.j2
+var rcTempl string
+
 type Bash struct{}
 
 const (
@@ -24,63 +28,19 @@ const (
 )
 
 func bashRC(cloud model.Cloud, osrc string, promptfile string, sessionfile string) string {
-	const rcTempl = `
-if [[ -f "/etc/bash.bashrc" ]] ; then
-  source "/etc/bash.bashrc"
-fi
-if [[ -f "$HOME/.bashrc" ]] ; then
-  source "$HOME/.bashrc"
-fi
-export ` + bashOsEnvFileKey + `="{{ .osrc }}"
-export ` + bashPromptFileKey + `="{{ .promptfile }}"
-export ` + bashSessionFileKey + `="{{ .sessionfile }}"
 
-
-set -o allexport
-source $` + bashOsEnvFileKey + `
-set +o allexport
-function _ossie_exec_ () {
-  export {{ .nested_marker }}
-  export ` + bashOsEnvFileKey + `="{{ .osrc }}"
-  export ` + bashSessionFileKey + `="{{ .sessionfile }}"
-  set -o allexport
-  source $` + bashSessionFileKey + `
-  set +o allexport
-{{- if .protectenv }}
-  unset ${!OS_*}
-  set -o allexport
-  source $` + bashOsEnvFileKey + `
-  set +o allexport
-{{ end -}}
-}
-
-{{ if .aliases -}}
-alias os=openstack
-alias o=openstack
-{{ end -}}
-function osenv () {
-  while IFS= read -r line; do
-    if [[ "$line" == *"OS_PASSWORD"* ]]; then
-      echo 'OS_PASSWORD="****"'
-    else
-      echo ${line/export/}
-    fi
-  done < "$` + bashOsEnvFileKey + `"
-}
-trap '_ossie_exec_' DEBUG
-_ossie_OLDPS="$PS1"
-
-PS1="[$(<{{ .promptfile }})]$_ossie_OLDPS"
-`
 	var out strings.Builder
 	t := template.Must(template.New("rc").Parse(rcTempl))
 	data := map[string]any{
-		"nested_marker": config.NestedEnvKey + "=" + config.NestedEnvVal,
-		"protectenv":    config.Global.ProtectEnv,
-		"aliases":       config.Global.Aliases,
-		"osrc":          osrc,
-		"promptfile":    promptfile,
-		"sessionfile":   sessionfile,
+		"nested_marker":  config.NestedEnvKey + "=" + config.NestedEnvVal,
+		"protectenv":     config.Global.ProtectEnv,
+		"aliases":        config.Global.Aliases,
+		"osrc":           osrc,
+		"promptfile":     promptfile,
+		"sessionfile":    sessionfile,
+		"OsEnvFileKey":   bashOsEnvFileKey,
+		"PromptFileKey":  bashPromptFileKey,
+		"SessionFileKey": bashSessionFileKey,
 	}
 	err := t.Execute(&out, data)
 	if err != nil {
