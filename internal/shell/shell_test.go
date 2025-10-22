@@ -48,3 +48,18 @@ func Test_generatePrompt(t *testing.T) {
 		})
 	}
 }
+
+func Test_envToExport(t *testing.T) {
+	var testCloud = model.Cloud{
+		Name: "testcloud",
+		Env: map[string]string{
+			"OS_PROJECT_NAME": "\"Retinentals \"",
+			"OS_DOMAIN_NAME":  "Domain1\"\"",
+		},
+	}
+	want := "export OS_DOMAIN_NAME=\"Domain1\"\nexport OS_PROJECT_NAME=\"Retinentals\"\n"
+	got := envToExport(testCloud)
+	if got != want {
+		t.Errorf("envToExport = %v, want %v", got, want)
+	}
+}

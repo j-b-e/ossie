@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -49,8 +50,13 @@ func UpdateEnv(cloud model.Cloud) {
 
 func envToExport(cloud model.Cloud) string {
 	var export string
-	for k, v := range cloud.Env {
-		export += "export " + k + "=\"" + v + "\"\n"
+	keys := make([]string, 0, len(cloud.Env))
+	for k := range cloud.Env {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		export += "export " + k + "=\"" + strings.Trim(cloud.Env[k], "\" ") + "\"\n"
 	}
 	return export
 }
